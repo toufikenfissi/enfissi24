@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<head>
+	<title>Covid-19: Etat Sanitaire dans la région Rabat-Salé-Kenitra</title>
+	<li class="active">COVID19-Chronologie : Carte choroplèthe representant le pourcentage des contaminés dans la région Rabat-Salé-Kenitra</li>
+</head>
+<meta charset="utf-8">
+<style>
+	.Nom_Provin-border {
+		fill: none;
+		stroke: rgb(138, 40, 40);
+		stroke-opacity: 1;
+    	stroke-width: 1;
+    	stroke-linecap: round;
+    	stroke-linejoin: round;
+		pointer-events: none;
+	}
+	.axis text {
+		font: 10px sans-serif;
+	}
+
+	.axis line, .axis path {
+		fill: none;
+		stroke: #000;
+		shape-rendering: crispEdges;
+	}
+</style>
+<html>
+	<body>
+		<input id="slider" type="range" min="19" max="25" value="19" step="1" />
+
+		<span id="range">19</span>
+		<script src="https://d3js.org/d3.v3.min.js"></script>
+		<script src="https://d3js.org/topojson.v1.min.js"></script>
+		<script src="https://raw.github.com/fryn/html5slider/master/html5slider.js"></script>
+		<script src = "https://cdnjs.cloudflare.com/ajax/libs/d3-legend/1.13.0/d3-legend.min.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/d3-legend/1.1.0/d3-legend.js"></script>
+		<script src="colorbrewer.min.js"></script>
+		<script type="text/javascript">
+
+
+//la fonction qui renvoie la valeur des cas contaminés d'un jour (range pr detereminer le jour et id pour determiner province)
+	
+onload = function() {
+  var $ = function(id) { return document.getElementById(id); };
+  $('slider').oninput = function() { $('range').innerHTML = this.value; };
+  $('slider').oninput();
+};
+
+	</script>
+	Décembre 2021
+		<script>
+			
+						
+			//choropleth
+			var width = 800, height = 400;
+
+			var value;
+			
+			// changer le type de scale (graduated colors)
+			var color = d3.scale.linear().domain([0, 64]).range(["#fcbba1", "#a50f15"]);
+
+			//Changer la projection
+			var projection = d3.geo.conicConformal().parallels([-90 + 00 / 60, 90 + 00 / 60]).rotate([-05 + 24 / 60, 0 + 0 / 60]).translate([width / 2, height / 2]);
+
+			var path = d3.geo.path().projection(projection);
+
+			var svg = d3.select("body").append("svg").attr("width", width).attr("height", height);
+			
+
+			d3.json("ok-regions.json", function(error, ok) {
+				var provincesnew = topojson.feature(ok, ok.objects.provincesnew);
+
+				projection.scale(1).translate([0, 0]);
+
+				var b = path.bounds(provincesnew), s = .95 / Math.max((b[1][0] - b[0][0]) / width, (b[1][1] - b[0][1]) / height), t = [(width - s * (b[1][0] + b[0][0])) / 2, (height - s * (b[1][1] + b[0][1])) / 2];
+
+				projection.scale(s).translate(t);
+
+				svg.selectAll("path").data(provincesnew.features.filter(function(d) {
+					return d.id;
+				})).enter().append("path").attr("class", "Nom_Provin").attr("d", path).style("fill", function(d) {
+					return color(d.properties.tt);
+				}).append("title").text(function(d) {
+					return " Province de " + d.properties.Nom_Provin ;
+				});
+
+				svg.append("path").datum(topojson.mesh(ok, ok.objects.provincesnew, function(a, b) {
+					return a !== b;
+				})).attr("class", "Nom_Provin-border").attr("d", path);
+
+				d3.selectAll("input").on("change", function change() {
+					var value = this.value;
+
+					d3.selectAll("path").style("fill", function(d) {
+						switch (value) {
+							case "19":
+							return color(d.properties.u);
+								break;
+							case "20":
+								return color(d.properties.d);
+								break;
+							case "21":
+								return color(d.properties.tu);
+								break;
+							case "22":
+								return color(d.properties.tt);
+								break;
+							case "23":
+								return color(d.properties.n);
+								break;
+							case "24":
+								return color(d.properties.h);
+								break;
+							case "25":
+								return color(d.properties.s);
+								break;
+						}
+					});
+				});
+
+			});
+			//end choropleth
+
+			//key
+			var w = 140, h = 400;
+
+			var key = d3.select("body").append("svg").attr("id", "key").attr("width", w).attr("height", h);
+
+			var legend = key.append("defs").append("svg:linearGradient").attr("id", "gradient").attr("x1", "100%").attr("y1", "0%").attr("x2", "100%").attr("y2", "100%").attr("spreadMethod", "pad");
+
+			legend.append("stop").attr("offset", "0%").attr("stop-color", "#a50f15").attr("stop-opacity", 1);  
+
+			legend.append("stop").attr("offset", "100%").attr("stop-color", "#fcbba1").attr("stop-opacity", 1);
+
+			key.append("rect").attr("width", w - 100).attr("height", h - 100).style("fill", "url(#gradient)").attr("transform", "translate(0,10)");
+
+			var y = d3.scale.linear().range([300, 0]).domain([0, 64]);
+
+			var yAxis = d3.svg.axis().scale(y).orient("right");
+
+			key.append("g").attr("class", "y axis").attr("transform", "translate(41,10)").call(yAxis).append("text").attr("transform", "rotate(-90)").attr("y", 30).attr("dy", ".71em").style("text-anchor", "end").text("Pourcentage des contaminés");
+			//end key
+
+			d3.select(self.frameElement).style("height", height + "px");
+
+			var svg = d3.select("svg");
+
+
+
+
+				// scale legend
+				var svg = d3.select("svg");
+
+				// Color legend.
+				//var colorScale = d3.scale.quantize()
+				//.domain([ 0, 64 ])
+				//.range(["#fcbba1","#fc9272","#fb6a4a","#de2d26", "#a50f15"]);
+
+				//var colorLegend = d3.legend.color()
+				//.labelFormat(d3.format(".0f"))
+				//.scale(colorScale)
+				//.shapePadding(5)
+				//.shapeWidth(50)
+				//.shapeHeight(20)
+				//.labelOffset(12);
+
+				//svg.append("g")
+				//.attr("transform", "translate(660, 200)")
+				//.call(colorLegend);
+
+				//var data = [3,8,5,2,8,9,2];
+
+
+				//svg.selectAll('circle')
+				//.data(data)
+				//.enter()
+				//.append('circle')
+				//	.attr("r", function(d,i){return d * 2.5})
+				//.attr("cx", function(d,i){return i * 50 + 30})
+				//.attr("cy", 100)
+				//.attr("fill", function(d,i){return colorScale(d)});
+
+
+		</script>
+
+	</body>
+</html>
